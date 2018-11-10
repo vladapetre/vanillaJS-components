@@ -1,22 +1,44 @@
-export interface jsSettings {
-    initClass: string;
+export interface JSSettings {
+    domElementClass:string;
 }
 
-export abstract class Component {
-
-    protected _defaults: jsSettings = {
-        initClass: "jsComponent"
-    }
-    protected _settings: jsSettings;
-    protected _domElement: HTMLElement;
+abstract class JSObject {
+    public abstract domElement: HTMLElement;
+    protected defaults: any;
+    protected settings: any;
     /**
      *
      */
-    constructor(domElement: HTMLElement, options?: jsSettings) {
-        this._settings = { ...this._defaults, ...options };
-        this._domElement = domElement;
+    constructor(options?: any) {
+        this.settings = { ...this.defaults, ...options };
+        console.log(this);
+    }
 
-        if (this._domElement != undefined && this._domElement != null)
-            this._domElement.classList.add(this._settings.initClass);
+    public abstract build():void;
+}
+
+export abstract class JSComponent extends JSObject {
+    public domElement: HTMLElement;
+
+    /**
+     *
+     */
+    constructor(domElement: HTMLElement, options?: any) {
+        super(options);
+        this.domElement = domElement;
+        this.domElement.classList.add(this.settings.domElementClass);
+    }
+}
+
+export abstract class JSElement extends JSObject {
+    public domElement: HTMLElement;
+
+    /**
+     *
+     */
+    constructor(domElementTag: string, options?: any) {
+        super(options);
+        this.domElement = document.createElement(domElementTag);
+        this.domElement.classList.add(this.settings.domElementClass);
     }
 }

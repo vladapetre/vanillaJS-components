@@ -1,3 +1,4 @@
 webpack : npm run build --watch
 sass: npx sass --watch src/scss:src/css
 gulp: npx gulp --watch
+typescript: npx tsc -w

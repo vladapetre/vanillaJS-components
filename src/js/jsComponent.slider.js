@@ -31,98 +31,124 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var jsUI = __importStar(require("./jsComponent.ui"));
-var SliderComponent = (function (_super) {
-    __extends(SliderComponent, _super);
-    function SliderComponent(domElement) {
-        var _this = _super.call(this, domElement) || this;
-        _this._defaults = {
-            initClass: "jsSlider",
-            currentValue: 50,
-            stepValue: 1,
-            maxValue: 100,
-            minValue: 0
-        };
-        _this._sliderButtonClass = "jsSliderButton";
-        _this._sliderBarClass = "jsSliderBar";
-        _this._sliderLabelClass = "jsSliderLabel";
-        _this.onWindowResize = function (event) {
-            _this._sliderButton.style.left = ((_this._settings.currentValue / _this._settings.maxValue) * _this._sliderBar.offsetWidth) + 'px';
-            _this._sliderLabel.innerHTML = String(_this._settings.currentValue);
+var jsCore = __importStar(require("./jsComponent.core"));
+var SliderButtonElement = (function (_super) {
+    __extends(SliderButtonElement, _super);
+    function SliderButtonElement(sliderBar, options) {
+        var _this = _super.call(this, "div", __assign({}, options, { domElementClass: 'jsSliderButton' })) || this;
+        _this.value = 0;
+        _this.onWindowsResize = function (event) {
+            _this.domElement.style.left = ((_this.value / _this.settings.maxValue) * _this.sliderBar.domElement.offsetWidth) + 'px';
         };
         _this.onStart = function (event) {
             event.preventDefault();
-            document.addEventListener('mousemove', _this.onMove);
-            document.addEventListener('mouseup', _this.onStop);
-            document.addEventListener('touchmove', _this.onMove);
-            document.addEventListener('touchend', _this.onStop);
+            document.addEventListener('mousemove', _this.onMove, false);
+            document.addEventListener('mouseup', _this.onStop, false);
+            document.addEventListener('touchmove', _this.onMove, false);
+            document.addEventListener('touchend', _this.onStop, false);
         };
         _this.onMove = function (event) {
             var minXPosition = 0;
-            var maxXPosition = _this._sliderBar.offsetWidth;
+            var maxXPosition = _this.sliderBar.domElement.offsetWidth;
             var xPosition = 0;
             if (event instanceof MouseEvent) {
-                xPosition = event.pageX - _this._sliderBar.offsetLeft;
+                xPosition = event.pageX - _this.sliderBar.domElement.offsetLeft;
             }
             else if (event instanceof TouchEvent) {
-                xPosition = event.touches[0].pageX - _this._sliderBar.offsetLeft;
+                xPosition = event.touches[0].pageX - _this.sliderBar.domElement.offsetLeft;
             }
             if (xPosition < minXPosition)
                 xPosition = minXPosition;
             if (xPosition > maxXPosition)
                 xPosition = maxXPosition;
-            var valueRange = _this._settings.maxValue - _this._settings.minValue;
+            var valueRange = _this.settings.maxValue - _this.settings.minValue;
             var xPositionPercent = xPosition / maxXPosition;
-            var currentValue = Math.max(valueRange * xPositionPercent + _this._settings.minValue);
-            if (currentValue == _this._settings.minValue || currentValue == _this._settings.maxValue) {
-                _this._sliderLabel.innerHTML = String(currentValue);
-                _this._settings.currentValue = currentValue;
+            var currentValue = Math.max(valueRange * xPositionPercent + _this.settings.minValue);
+            if (currentValue == _this.settings.minValue || currentValue == _this.settings.maxValue) {
+                _this.value = currentValue;
             }
             else {
-                var stepValue = Math.floor(currentValue / _this._settings.stepValue) * _this._settings.stepValue;
-                _this._sliderLabel.innerHTML = String(stepValue);
-                _this._settings.currentValue = stepValue;
+                var stepValue = Math.floor(currentValue / _this.settings.stepValue) * _this.settings.stepValue;
+                _this.value = stepValue;
             }
-            _this._sliderButton.style.left = xPosition - _this._sliderButton.offsetWidth / 2 + 'px';
+            _this.domElement.style.left = xPosition - _this.domElement.offsetWidth / 2 + 'px';
         };
         _this.onStop = function (event) {
-            document.removeEventListener('mousemove', _this.onMove);
-            document.removeEventListener('mouseup', _this.onStop);
-            document.removeEventListener('touchmove', _this.onMove);
-            document.removeEventListener('touchend', _this.onStop);
+            document.removeEventListener('mousemove', _this.onMove, false);
+            document.removeEventListener('mouseup', _this.onStop, false);
+            document.removeEventListener('touchmove', _this.onMove, false);
+            document.removeEventListener('touchend', _this.onStop, false);
         };
+        _this.sliderBar = sliderBar;
         return _this;
     }
-    SliderComponent.prototype.buildComponent = function (options) {
-        if (options != undefined && options != null) {
-            this._settings = __assign({}, this._defaults, options);
+    SliderButtonElement.prototype.build = function () {
+        this.domElement.addEventListener('mousedown', this.onStart, false);
+        this.domElement.addEventListener('touchstart', this.onStart, false);
+        this.value = this.settings.currentValue;
+        this.domElement.style.left = ((this.value / this.settings.maxValue) * this.sliderBar.domElement.offsetWidth) + 'px';
+        window.addEventListener('resize', this.onWindowsResize);
+    };
+    return SliderButtonElement;
+}(jsCore.JSElement));
+var SliderBarElement = (function (_super) {
+    __extends(SliderBarElement, _super);
+    function SliderBarElement(options) {
+        var _this = _super.call(this, "div", __assign({}, options, { domElementClass: 'jsSliderBar' })) || this;
+        _this.sliderButtons = [];
+        var buttonIndex = 0;
+        if (_this.settings.numberOfButtons <= 1) {
+            _this.sliderButtons.push(new SliderButtonElement(_this, _this.settings));
         }
         else {
-            var domSettings = {
-                minValue: Number(this._domElement.dataset.minvalue),
-                maxValue: Number(this._domElement.dataset.maxvalue),
-                currentValue: Number(this._domElement.dataset.currentvalue),
-                stepValue: Number(this._domElement.dataset.stepvalue),
-            };
-            this._settings = __assign({}, this._defaults, domSettings);
+            for (buttonIndex; buttonIndex < _this.settings.numberOfButtons; buttonIndex++) {
+                var currentValue = _this.settings.currentValues[buttonIndex];
+                _this.sliderButtons.push(new SliderButtonElement(_this, __assign({}, _this.settings, { currentValue: currentValue })));
+            }
         }
-        this._sliderBar = document.createElement("div");
-        this._sliderBar.classList.add(this._sliderBarClass);
-        this._sliderButton = document.createElement("span");
-        this._sliderButton.classList.add(this._sliderButtonClass);
-        this._sliderLabel = document.createElement("label");
-        this._sliderLabel.classList.add(this._sliderLabelClass);
-        this._sliderBar.appendChild(this._sliderButton);
-        this._domElement.appendChild(this._sliderBar);
-        this._domElement.appendChild(this._sliderLabel);
-        this._sliderButton.addEventListener('mousedown', this.onStart);
-        this._sliderButton.addEventListener('touchstart', this.onStart);
-        this._sliderButton.style.left = ((this._settings.currentValue / this._settings.maxValue) * this._sliderBar.offsetWidth) + 'px';
-        this._sliderLabel.innerHTML = String(this._settings.currentValue);
-        window.addEventListener('resize', this.onWindowResize);
-        return this._domElement;
+        return _this;
+    }
+    SliderBarElement.prototype.build = function () {
+        for (var _i = 0, _a = this.sliderButtons; _i < _a.length; _i++) {
+            var sliderButton = _a[_i];
+            this.domElement.appendChild(sliderButton.domElement);
+            sliderButton.build();
+        }
+    };
+    return SliderBarElement;
+}(jsCore.JSElement));
+var SliderElement = (function (_super) {
+    __extends(SliderElement, _super);
+    function SliderElement(options) {
+        var _this = _super.call(this, "div", __assign({}, options, { domElementClass: 'jsSlider' })) || this;
+        _this.sliderBar = new SliderBarElement(options);
+        return _this;
+    }
+    SliderElement.prototype.build = function () {
+        this.domElement.appendChild(this.sliderBar.domElement);
+        this.sliderBar.build();
+    };
+    return SliderElement;
+}(jsCore.JSElement));
+var SliderComponent = (function (_super) {
+    __extends(SliderComponent, _super);
+    function SliderComponent(domElement, options) {
+        var _this = _super.call(this, domElement, __assign({}, options, { domElementClass: 'jsComponent' })) || this;
+        var defaults = {
+            numberOfButtons: 10,
+            currentValues: [20, 45, 25, 66, 60, 79],
+            minValue: 0,
+            maxValue: 100,
+            stepValue: 5
+        };
+        _this.slider = new SliderElement(__assign({}, options, defaults));
+        return _this;
+    }
+    SliderComponent.prototype.build = function () {
+        this.domElement.appendChild(this.slider.domElement);
+        this.slider.build();
     };
     return SliderComponent;
-}(jsUI.UIComponent));
+}(jsCore.JSComponent));
 exports.SliderComponent = SliderComponent;
 //# sourceMappingURL=jsComponent.slider.js.map
